@@ -9,9 +9,21 @@ from .serializers import GameSerializer, GenreSerializer, PlatformSerializer
 
 
 class GameList(generics.ListCreateAPIView):
-    queryset = Game.objects.all()
     serializer_class = GameSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # allow filtering by whether the authenticated user has marked the game
+        # as played. query param 'played' accepts 'true'/'false'.
+        qs = Game.objects.all()
+        played = self.request.query_params.get('played')
+        if played is not None and self.request.user.is_authenticated:
+            flag = played.lower()
+            if flag in ('true', '1', 'yes'):
+                qs = qs.filter(players=self.request.user)
+            elif flag in ('false', '0', 'no'):
+                qs = qs.exclude(players=self.request.user)
+        return qs
 
 
 class MarkPlayedView(APIView):
@@ -40,4 +52,8 @@ class GenreList(generics.ListAPIView):
 class PlatformList(generics.ListAPIView):
     queryset = Platform.objects.all()
     serializer_class = PlatformSerializer
+    permission_classes = [IsAuthenticated]
+
+class PlayedList(generics.ListAPIView):
+    serializer_class = GameSerializer
     permission_classes = [IsAuthenticated]

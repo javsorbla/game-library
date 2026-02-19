@@ -9,6 +9,7 @@ const GameList = ({ token }) => {
   const [platforms, setPlatforms] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("");
+  const [selectedPlayed, setSelectedPlayed] = useState("");
 
   useEffect(() => {
     if (!token) {
@@ -77,6 +78,17 @@ const GameList = ({ token }) => {
             ))}
           </select>
         </label>
+        <label>
+          Played:
+          <select
+            value={selectedPlayed}
+            onChange={(e) => setSelectedPlayed(e.target.value)}
+          >
+            <option value="">All</option>
+            <option value="played">Played</option>
+            <option value="unplayed">Not Played</option>
+          </select>
+        </label>
       </div>
 
       <div className="games-grid">
@@ -88,6 +100,8 @@ const GameList = ({ token }) => {
               !game.platform.includes(selectedPlatform)
             )
               return false;
+            if (selectedPlayed === "played" && !game.is_played) return false;
+            if (selectedPlayed === "unplayed" && game.is_played) return false;
             return true;
           })
           .map((game) => (

@@ -107,6 +107,21 @@ class ApiEndpointTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIsInstance(res.data, list)
 
+    def test_played_filter_parameter(self):
+        g1 = Game.objects.create(name="G1")
+        g2 = Game.objects.create(name="G2")
+        g1.players.add(self.user)
+        url = reverse('game_list')
+        res = self.client.get(url + '?played=true')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]['id'], g1.id)
+
+        res = self.client.get(url + '?played=false')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]['id'], g2.id)
+
     def test_mark_and_unmark_played(self):
         game = Game.objects.create(name="Playable")
         mark_url = reverse('game_mark_played', args=[game.id])
