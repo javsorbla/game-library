@@ -5,10 +5,18 @@ from .models import Game, Genre, Platform
 class GameSerializer(serializers.ModelSerializer):
     genre = serializers.SerializerMethodField()
     platform = serializers.SerializerMethodField()
+    is_played = serializers.SerializerMethodField()
 
     class Meta:
         model = Game
         fields = '__all__'
+
+    def get_is_played(self, obj):
+        # `request` is passed via context in the views; guard against unauthenticated
+        request = self.context.get('request')
+        if request and hasattr(request, "user") and request.user.is_authenticated:
+            return obj.players.filter(pk=request.user.pk).exists()
+        return False
 
     def get_genre(self, obj):
         return obj.genre

@@ -107,3 +107,24 @@ class ApiEndpointTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIsInstance(res.data, list)
 
+    def test_mark_and_unmark_played(self):
+        game = Game.objects.create(name="Playable")
+        mark_url = reverse('game_mark_played', args=[game.id])
+
+        # initially not played
+        res = self.client.get(reverse('game_list'))
+        self.assertFalse(res.data[0].get('is_played', False))
+
+        # post to mark as played
+        res = self.client.post(mark_url)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.data.get('is_played'))
+        game.refresh_from_db()
+        self.assertTrue(game.players.filter(pk=self.user.pk).exists())
+
+        # delete to unmark
+        res = self.client.delete(mark_url)
+        self.assertEqual(res.status_code, 204)
+        game.refresh_from_db()
+        self.assertFalse(game.players.filter(pk=self.user.pk).exists())
+

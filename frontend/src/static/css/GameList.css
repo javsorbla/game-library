@@ -78,6 +78,22 @@
   transform: scale(1.05);
 }
 
+.game-card .played-checkbox {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.game-card .played-checkbox input {
+  margin-right: 0.5rem;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
 
 .game-card h2,
 .game-card h3 {

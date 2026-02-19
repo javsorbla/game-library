@@ -6,7 +6,7 @@ from background_task import background
 
 
 @background(schedule=0)
-def fetch_games(batch_size=10):
+def fetch_games(batch_size=50):
     page = random.randint(1, 50)
     api_key = settings.RAWG_API_KEY
     url = f"https://api.rawg.io/api/games?key={api_key}&page={page}&page_size={batch_size}"

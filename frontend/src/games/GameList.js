@@ -91,7 +91,15 @@ const GameList = ({ token }) => {
             return true;
           })
           .map((game) => (
-            <GameCard key={game.id} game={game} />
+            <GameCard
+              key={game.id}
+              game={game}
+              onTogglePlayed={(updated) => {
+                setGames((prev) =>
+                  prev.map((g) => (g.id === updated.id ? updated : g))
+                );
+              }}
+            />
           ))}
       </div>
     </div>
