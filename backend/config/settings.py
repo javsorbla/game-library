@@ -35,6 +35,11 @@ CORS_ALLOWED_ORIGINS = [
 # permit cookies/credentials from the React app
 CORS_ALLOW_CREDENTIALS = True
 
+# allow the frontend origin for CSRF origin checks
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+]
+
 # Application definition
 
 INSTALLED_APPS = [

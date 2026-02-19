@@ -3,13 +3,22 @@ import { useState } from "react";
 import axios from "axios";
 
 const GameCard = ({ game, onTogglePlayed }) => {
+  // fallback to false if the field isn't present
   const [isPlayed, setIsPlayed] = useState(game.is_played || false);
+
+  const getCsrf = () => {
+    const split = document.cookie.split('; ').find((c) => c.startsWith('csrftoken='));
+    return split ? split.split('=')[1] : '';
+  };
 
   const handleToggle = () => {
     const method = isPlayed ? "delete" : "post";
     axios({
       method,
       url: `http://localhost:8000/api/games/${game.id}/played/`,
+      headers: {
+        'X-CSRFToken': getCsrf(),
+      },
     })
       .then((res) => {
         if (method === "post") {
