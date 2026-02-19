@@ -31,9 +31,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
-    # allow unauthenticated POST so the SPA can send credentials; we will
-    # still issue a CSRF cookie in the response so later requests are
-    # protected.
     authentication_classes = []
     permission_classes = [AllowAny]
 
@@ -49,9 +46,17 @@ class LoginView(APIView):
         return Response({'detail': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    # allow logout without CSRF; response will clear the cookie so the
+    # browser no longer sends an (invalid) sessionid.
+    authentication_classes = []
+    permission_classes = []
 
     def post(self, request):
+        # even if the user is anonymous, calling logout is harmless
         logout(request)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        # instruct browser to delete the sessionid cookie
+        response.delete_cookie('sessionid', path='/')
+        return response

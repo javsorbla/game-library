@@ -27,6 +27,9 @@ function App() {
       // ignore errors; just clear state
     }
     setIsAuthenticated(false);
+    // force reload so any remaining cookies are dropped and the
+    // mount effect re-checks the server
+    window.location.reload();
   };
 
   return (

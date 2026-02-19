@@ -40,3 +40,14 @@ class AuthTests(TestCase):
         from django.contrib.auth import get_user_model
         User = get_user_model()
         self.assertTrue(User.objects.filter(username='bob').exists())
+
+    def test_logout_clears_session_cookie(self):
+        # login first to get a session
+        self.client.login(username='alice', password='secret')
+        response = self.client.post(reverse('user-logout'))
+        self.assertEqual(response.status_code, 204)
+        # logout response should delete the cookie
+        self.assertEqual(response.cookies['sessionid'].value, '')
+        self.assertEqual(response.cookies['sessionid']['max-age'], 0)
+        # subsequent authenticated check should fail
+        self.assertFalse(self.client.session.session_key)
