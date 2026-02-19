@@ -6,6 +6,46 @@
   margin-top:0%
 }
 
+.filters {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.filters label {
+  color: #fff;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.filters select {
+  margin-left: 0.5rem;
+  background: linear-gradient(145deg, #42425a, #4e4f6e);
+  border: 1px solid #2f2f44;
+  border-radius: 6px;
+  color: #f0f0f0;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.filters select:hover {
+  background: linear-gradient(145deg, #4e4f6e, #5c5d80);
+  transform: scale(1.02);
+}
+
+.filters select:focus {
+  border-color: #ff6a00;
+  box-shadow: 0 0 5px rgba(255,106,0,0.6);
+}
+
+.filters select option {
+  color: #1d1c1c;
+}
+
 .game-card {
   background: linear-gradient(145deg, #282832, #363648);
   border-radius: 12px;
@@ -75,3 +115,4 @@ body {
   padding: 10px;
   margin-top:0%;
 }
+

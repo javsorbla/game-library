@@ -5,6 +5,10 @@ import "../static/css/GameList.css";
 
 const GameList = ({ token }) => {
   const [games, setGames] = useState([]);
+  const [genres, setGenres] = useState([]);
+  const [platforms, setPlatforms] = useState([]);
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState("");
 
   useEffect(() => {
     if (!token) {
@@ -26,16 +30,73 @@ const GameList = ({ token }) => {
       });
   }, [token]);
 
+  // fetch auxiliary lists for filters
+  useEffect(() => {
+    if (!token) return;
+
+    axios
+      .get("http://localhost:8000/api/genres/")
+      .then((res) => setGenres(res.data))
+      .catch((err) => console.error(err));
+
+    axios
+      .get("http://localhost:8000/api/platforms/")
+      .then((res) => setPlatforms(res.data))
+      .catch((err) => console.error(err));
+  }, [token]);
+
   return (
     <div className="dashboard-container">
       <h1 className="dashboard-title">Videogame Dashboard</h1>
+      <div className="filters">
+        <label>
+          Genre:
+          <select
+            value={selectedGenre}
+            onChange={(e) => setSelectedGenre(e.target.value)}
+          >
+            <option value="">All</option>
+            {genres.map((g) => (
+              <option key={g.id} value={g.name}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Platform:
+          <select
+            value={selectedPlatform}
+            onChange={(e) => setSelectedPlatform(e.target.value)}
+          >
+            <option value="">All</option>
+            {platforms.map((p) => (
+              <option key={p.id} value={p.name}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       <div className="games-grid">
-        {games.map((game) => (
-          <GameCard key={game.id} game={game} />
-        ))}
+        {games
+          .filter((game) => {
+            if (selectedGenre && !game.genre.includes(selectedGenre)) return false;
+            if (
+              selectedPlatform &&
+              !game.platform.includes(selectedPlatform)
+            )
+              return false;
+            return true;
+          })
+          .map((game) => (
+            <GameCard key={game.id} game={game} />
+          ))}
       </div>
     </div>
   );
 };
 
 export default GameList;
+
