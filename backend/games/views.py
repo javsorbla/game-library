@@ -53,7 +53,3 @@ class PlatformList(generics.ListAPIView):
     queryset = Platform.objects.all()
     serializer_class = PlatformSerializer
     permission_classes = [IsAuthenticated]
-
-class PlayedList(generics.ListAPIView):
-    serializer_class = GameSerializer
-    permission_classes = [IsAuthenticated]
