@@ -1,0 +1,72 @@
+services:
+
+  db:
+    image: postgres:15
+    container_name: games_db
+    environment:
+      POSTGRES_DB: gamesdb
+      POSTGRES_USER: games
+      POSTGRES_PASSWORD: games
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./backend
+    container_name: games_backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "
+      until pg_isready -h db -p 5432; do
+        echo 'Waiting for database...';
+        sleep 2;
+      done;
+      pip install -r requirements.txt &&
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    env_file:
+    - ./backend/.env
+    depends_on:
+      - db
+  
+  frontend:
+    build: ./frontend
+    container_name: games_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm start"
+    depends_on:
+      - backend
+  
+  worker:
+    build: ./backend
+    container_name: games_worker
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "
+      until pg_isready -h db -p 5432; do
+        echo 'Waiting for database...';
+        sleep 2;
+      done;
+      sleep 5 &&
+      python manage.py schedule_fetch &&
+      python manage.py process_tasks
+      "
+    env_file:
+    - ./backend/.env
+    depends_on:
+      - db
+      - backend
+
+volumes:
+  postgres_data:
