@@ -19,7 +19,6 @@ export default function Login({ setAuthenticated }) {
       });
       setError("");
       setAuthenticated(true);
-      // Redirect on success
       navigate("/dashboard");
     } catch (err) {
       setError("Incorrect username or password");

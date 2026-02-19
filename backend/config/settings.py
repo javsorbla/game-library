@@ -154,10 +154,8 @@ REST_FRAMEWORK = {
 }
 
 # cookies must be allowed across origins (react on :3000 talking to django on
-# :8000).  Lax/Strict same-site blocks the session/CSRF cookie on cross-port
-# POST requests, so set them to None in development.  In production you'll want
-# to carefully choose values and use secure cookies.
-SESSION_COOKIE_SAMESITE = None
-CSRF_COOKIE_SAMESITE = None
+# :8000).  cross-port requests are still considered *same-site* by the
+# specification, so the default `Lax` value will allow the session/CSRF
+# cookie on POSTs.  Keep secure flags off during local development.
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
