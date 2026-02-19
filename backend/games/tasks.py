@@ -22,6 +22,7 @@ def fetch_games(batch_size=50):
             'name': item['name'],
             'rating': item.get('rating'),
             'image': item.get('background_image'),
+            'release_date': item.get('released'),
         }
         game, created = Game.objects.update_or_create(
             rawg_id=item['id'],

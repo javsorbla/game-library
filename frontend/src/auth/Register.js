@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "../static/css/auth.css";
 
-export default function Register({ setToken }) {
+export default function Register({ setAuthenticated }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,19 +13,18 @@ export default function Register({ setToken }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // first create the user
+      // create the user and log them in via session endpoint
       await axios.post("http://localhost:8000/api/register/", {
         username,
         email,
         password,
       });
-      // then immediately log them in
-      const response = await axios.post("http://localhost:8000/api/token/", {
+      await axios.post("http://localhost:8000/api/login/", {
         username,
         password,
       });
-      setToken(response.data.access);
       setError("");
+      setAuthenticated(true);
       navigate("/dashboard");
     } catch (err) {
       setError("Unable to register user");

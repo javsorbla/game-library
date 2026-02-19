@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "../static/css/auth.css";
 
-export default function Login({ setToken }) {
+export default function Login({ setAuthenticated }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,14 +12,14 @@ export default function Login({ setToken }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:8000/api/token/", {
+      // send credentials; session cookie will be set on success
+      await axios.post("http://localhost:8000/api/login/", {
         username,
         password,
       });
-      setToken(response.data.access);
       setError("");
-
-      // Redirige al dashboard tras iniciar sesión
+      setAuthenticated(true);
+      // Redirect on success
       navigate("/dashboard");
     } catch (err) {
       setError("Incorrect username or password");

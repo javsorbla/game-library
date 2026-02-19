@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 import Login from "./auth/Login";
@@ -7,54 +7,76 @@ import Register from "./auth/Register";
 import GameList from "./games/GameList";
 import Navbar from "./Navbar";
 
+// send cookies and CSRF header on every request
+axios.defaults.withCredentials = true;
+
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // apply stored token synchronously so child components can fetch immediately
-  if (token && !axios.defaults.headers.common["Authorization"]) {
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  }
-
-  const handleLogout = () => {
-    setToken("");
-    localStorage.removeItem("token");
-    delete axios.defaults.headers.common["Authorization"];
-  };
-
+  // when the app loads try to hit a protected endpoint to see if a
+  // session cookie already exists. this keeps the user logged in across
+  // refreshes.
   useEffect(() => {
-    if (token) {
-      localStorage.setItem("token", token);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    axios
+      .get("http://localhost:8000/api/genres/")
+      .then(() => setIsAuthenticated(true))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
+
+  const location = useLocation();
+
+  const handleLogout = async () => {
+    try {
+      await axios.post("http://localhost:8000/api/logout/");
+    } catch (_) {
+      // ignore errors; just clear state
     }
-  }, [token]);
+    setIsAuthenticated(false);
+  };
 
   const PrivateRoute = ({ children }) => {
-    return token ? children : <Navigate to="/login" />;
+    return isAuthenticated ? children : <Navigate to="/login" />;
   };
+
 
   return (
     <Router>
-      {token && <Navbar onLogout={handleLogout} />}
+      {/* only show navbar on non-auth pages */}
+      {isAuthenticated && !["/login", "/register"].includes(location.pathname) && (
+        <Navbar onLogout={handleLogout} />
+      )}
       <Routes>
-        <Route 
-          path="/login" 
-          element={<Login setToken={setToken} />} 
+        <Route
+          path="/login"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" />
+            ) : (
+              <Login setAuthenticated={setIsAuthenticated} />
+            )
+          }
         />
         <Route
           path="/register"
-          element={<Register setToken={setToken} />}
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" />
+            ) : (
+              <Register setAuthenticated={setIsAuthenticated} />
+            )
+          }
         />
         <Route 
           path="/dashboard" 
           element={
             <PrivateRoute>
-              <GameList token={token} />
+              <GameList />
             </PrivateRoute>
           } 
         />
         <Route 
           path="/" 
-          element={<Navigate to={token ? "/dashboard" : "/login"} />} 
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} 
         />
       </Routes>
     </Router>

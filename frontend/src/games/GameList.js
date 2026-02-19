@@ -3,7 +3,7 @@ import axios from "axios";
 import GameCard from "./GameCard";
 import "../static/css/GameList.css";
 
-const GameList = ({ token }) => {
+const GameList = () => {
   const [games, setGames] = useState([]);
   const [genres, setGenres] = useState([]);
   const [platforms, setPlatforms] = useState([]);
@@ -12,29 +12,16 @@ const GameList = ({ token }) => {
   const [selectedPlayed, setSelectedPlayed] = useState("");
 
   useEffect(() => {
-    if (!token) {
-      return; // nothing to do if we don't have a token yet
-    }
-    // ensures header is set for this request in case parent didn't
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
     axios
       .get("http://localhost:8000/api/games/")
       .then((res) => setGames(res.data))
       .catch((err) => {
-        if (err.response && err.response.status === 401) {
-          // token may have expired; redirect to login by reloading
-          window.location.href = "/login";
-        } else {
-          console.error(err);
-        }
+        console.error(err);
       });
-  }, [token]);
+  }, []);
 
   // fetch auxiliary lists for filters
   useEffect(() => {
-    if (!token) return;
-
     axios
       .get("http://localhost:8000/api/genres/")
       .then((res) => setGenres(res.data))
@@ -44,7 +31,7 @@ const GameList = ({ token }) => {
       .get("http://localhost:8000/api/platforms/")
       .then((res) => setPlatforms(res.data))
       .catch((err) => console.error(err));
-  }, [token]);
+  }, []);
 
   return (
     <div className="dashboard-container">

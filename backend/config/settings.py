@@ -32,6 +32,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 
+# permit cookies/credentials from the React app
+CORS_ALLOW_CREDENTIALS = True
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -142,7 +145,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 RAWG_API_KEY = os.getenv('RAWG_API_KEY')
 
 REST_FRAMEWORK = {
+    # switch from JWT to session authentication; frontend will use
+    # cookies/CSRF instead of bearer tokens
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ),
 }
+
+# cookies must be allowed across origins (react on :3000 talking to django on
+# :8000).  Lax/Strict same-site blocks the session/CSRF cookie on cross-port
+# POST requests, so set them to None in development.  In production you'll want
+# to carefully choose values and use secure cookies.
+SESSION_COOKIE_SAMESITE = None
+CSRF_COOKIE_SAMESITE = None
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False

@@ -81,10 +81,9 @@ class ApiEndpointTests(TestCase):
         from django.contrib.auth import get_user_model
         User = get_user_model()
         self.user = User.objects.create_user(username='test', password='test')
-        response = self.client.post(reverse('token_obtain_pair'), {'username': 'test', 'password': 'test'}, format='json')
-        self.assertEqual(response.status_code, 200)
-        token = response.data['access']
-        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+        # authenticate using the test client session
+        logged_in = self.client.login(username='test', password='test')
+        self.assertTrue(logged_in, "Unable to log in with session auth")
 
     def test_genre_list_endpoint(self):
         Genre.objects.create(name="Action")
