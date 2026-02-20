@@ -5,6 +5,7 @@ import axios from "axios";
 import Login from "./auth/Login";
 import Register from "./auth/Register";
 import GameList from "./games/GameList";
+import TierList from "./games/TierList";
 import Navbar from "./Navbar";
 
 // send cookies and CSRF header on every request
@@ -81,6 +82,14 @@ function AppContent({ isAuthenticated, setIsAuthenticated, handleLogout }) {
           element={
             <PrivateRoute>
               <GameList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/tier"
+          element={
+            <PrivateRoute>
+              <TierList />
             </PrivateRoute>
           }
         />
