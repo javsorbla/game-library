@@ -100,11 +100,15 @@ class ApiEndpointTests(TestCase):
         self.assertTrue(len(res.data) >= 1)
 
     def test_game_list_endpoint(self):
+        # basic list should still work but now returns paginated data
         Game.objects.create(name="A Game")
         url = reverse('game_list')
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
-        self.assertIsInstance(res.data, list)
+        # expect pagination envelope with `results` key
+        self.assertIn('results', res.data)
+        self.assertIsInstance(res.data['results'], list)
+        self.assertEqual(len(res.data['results']), 1)
 
     def test_played_filter_parameter(self):
         g1 = Game.objects.create(name="G1")
@@ -113,13 +117,15 @@ class ApiEndpointTests(TestCase):
         url = reverse('game_list')
         res = self.client.get(url + '?played=true')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]['id'], g1.id)
+        results = res.data.get('results', [])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['id'], g1.id)
 
         res = self.client.get(url + '?played=false')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]['id'], g2.id)
+        results = res.data.get('results', [])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['id'], g2.id)
 
     def test_mark_and_unmark_played(self):
         game = Game.objects.create(name="Playable")
@@ -127,7 +133,8 @@ class ApiEndpointTests(TestCase):
 
         # initially not played
         res = self.client.get(reverse('game_list'))
-        self.assertFalse(res.data[0].get('is_played', False))
+        first = res.data.get('results', [])[0]
+        self.assertFalse(first.get('is_played', False))
 
         # post to mark as played
         res = self.client.post(mark_url)
@@ -141,4 +148,58 @@ class ApiEndpointTests(TestCase):
         self.assertEqual(res.status_code, 204)
         game.refresh_from_db()
         self.assertFalse(game.players.filter(pk=self.user.pk).exists())
+
+    def test_pagination_limits_and_count(self):
+        # create a handful of games to test default page size
+        for i in range(25):
+            Game.objects.create(name=f"Game {i}")
+        url = reverse('game_list')
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('results', res.data)
+        self.assertEqual(len(res.data['results']), 20)  # page size default
+        self.assertEqual(res.data['count'], 25)
+        # request second page
+        res2 = self.client.get(url + '?page=2')
+        self.assertEqual(res2.status_code, 200)
+        self.assertEqual(len(res2.data['results']), 5)
+
+    def test_alphabetical_ordering(self):
+        # insert in reverse alphabetical order
+        Game.objects.create(name="Zebra")
+        Game.objects.create(name="Alpha")
+        Game.objects.create(name="Middle")
+        url = reverse('game_list')
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        results = res.data.get('results', [])
+        # expect names sorted ascending
+        names = [g['name'] for g in results]
+        self.assertEqual(names, sorted(names))
+
+    def test_genre_platform_query_parameters(self):
+        # set up games with various relationships
+        g1 = Genre.objects.create(name="Action")
+        g2 = Genre.objects.create(name="Puzzle")
+        p1 = Platform.objects.create(name="PC")
+        p2 = Platform.objects.create(name="Switch")
+        game1 = Game.objects.create(name="Alpha")
+        game1.genres.add(g1)
+        game1.platforms.add(p1)
+        game2 = Game.objects.create(name="Beta")
+        game2.genres.add(g2)
+        game2.platforms.add(p2)
+        url = reverse('game_list')
+        # genre filter
+        res = self.client.get(url + '?genre=Action')
+        self.assertEqual(res.status_code, 200)
+        results = res.data.get('results', [])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['id'], game1.id)
+        # platform filter
+        res = self.client.get(url + '?platform=Switch')
+        self.assertEqual(res.status_code, 200)
+        results = res.data.get('results', [])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['id'], game2.id)
 

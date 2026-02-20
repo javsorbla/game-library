@@ -5,31 +5,63 @@ import "../static/css/GameList.css";
 
 const GameList = () => {
   const [games, setGames] = useState([]);
+  const [pageInfo, setPageInfo] = useState({ next: null, previous: null, count: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
   const [genres, setGenres] = useState([]);
   const [platforms, setPlatforms] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("");
   const [selectedPlayed, setSelectedPlayed] = useState("");
 
-  useEffect(() => {
+  // utility that fetches games from the API using filters and pagination
+  const fetchGames = () => {
+    const params = { page: currentPage };
+    if (selectedGenre) params.genre = selectedGenre;
+    if (selectedPlatform) params.platform = selectedPlatform;
+    if (selectedPlayed === "played") params.played = true;
+    if (selectedPlayed === "unplayed") params.played = false;
+
     axios
-      .get("http://localhost:8000/api/games/")
-      .then((res) => setGames(res.data))
+      .get("http://localhost:8000/api/games/", { params })
+      .then((res) => {
+        setGames(res.data.results || []);
+        setPageInfo({
+          next: res.data.next,
+          previous: res.data.previous,
+          count: res.data.count,
+        });
+      })
       .catch((err) => {
         console.error(err);
       });
-  }, []);
+  };
+
+  // reset to first page if any filter value changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedGenre, selectedPlatform, selectedPlayed]);
+
+  // initial load and whenever page or filters change
+  useEffect(() => {
+    fetchGames();
+  }, [currentPage, selectedGenre, selectedPlatform, selectedPlayed]);
 
   // fetch auxiliary lists for filters
   useEffect(() => {
     axios
       .get("http://localhost:8000/api/genres/")
-      .then((res) => setGenres(res.data))
+      .then((res) => {
+        const data = res.data.results ? res.data.results : res.data;
+        setGenres(data);
+      })
       .catch((err) => console.error(err));
 
     axios
       .get("http://localhost:8000/api/platforms/")
-      .then((res) => setPlatforms(res.data))
+      .then((res) => {
+        const data = res.data.results ? res.data.results : res.data;
+        setPlatforms(data);
+      })
       .catch((err) => console.error(err));
   }, []);
 
@@ -79,29 +111,36 @@ const GameList = () => {
       </div>
 
       <div className="games-grid">
-        {games
-          .filter((game) => {
-            if (selectedGenre && !game.genre.includes(selectedGenre)) return false;
-            if (
-              selectedPlatform &&
-              !game.platform.includes(selectedPlatform)
-            )
-              return false;
-            if (selectedPlayed === "played" && !game.is_played) return false;
-            if (selectedPlayed === "unplayed" && game.is_played) return false;
-            return true;
-          })
-          .map((game) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              onTogglePlayed={(updated) => {
-                setGames((prev) =>
-                  prev.map((g) => (g.id === updated.id ? updated : g))
-                );
-              }}
-            />
-          ))}
+        {games.map((game) => (
+          <GameCard
+            key={game.id}
+            game={game}
+            onTogglePlayed={(updated) => {
+              // update the cached page in-place
+              setGames((prev) =>
+                prev.map((g) => (g.id === updated.id ? updated : g))
+              );
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="pagination-controls">
+        <button
+          disabled={!pageInfo.previous}
+          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+        >
+          Previous
+        </button>
+        <span>
+          Page {currentPage} of {Math.ceil(pageInfo.count / (games.length || 1)) || 1}
+        </span>
+        <button
+          disabled={!pageInfo.next}
+          onClick={() => setCurrentPage((p) => p + 1)}
+        >
+          Next
+        </button>
       </div>
     </div>
   );

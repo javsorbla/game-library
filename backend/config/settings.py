@@ -156,6 +156,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
+    # pagination defaults so listing endpoints won't return huge result sets
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 21,
 }
 
 # cookies must be allowed across origins (react on :3000 talking to django on

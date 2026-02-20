@@ -5,7 +5,33 @@
   padding: 20px;
   margin-top:0%
 }
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
 
+.pagination-controls button {
+  background: linear-gradient(145deg, #42425a, #4e4f6e);
+  border: 1px solid #2f2f44;
+  border-radius: 6px;
+  color: #f0f0f0;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.pagination-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background: linear-gradient(145deg, #4e4f6e, #5c5d80);
+  transform: scale(1.02);
+}
 .filters {
   display: flex;
   gap: 1rem;
