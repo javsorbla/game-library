@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import "../static/css/auth.css";
+import "../static/css/Auth.css";
 
 export default function Register({ setAuthenticated }) {
   const [username, setUsername] = useState("");
