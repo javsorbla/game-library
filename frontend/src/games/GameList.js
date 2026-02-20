@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import GameCard from "./GameCard";
 import "../static/css/GameList.css";
@@ -68,8 +69,9 @@ const GameList = () => {
   return (
     <div className="dashboard-container">
       <h1 className="dashboard-title">Videogame Dashboard</h1>
-      <div className="filters">
-        <label>
+      <div className="options-bar">
+        <div className="filters">
+          <label>
           Genre:
           <select
             value={selectedGenre}
@@ -82,32 +84,36 @@ const GameList = () => {
               </option>
             ))}
           </select>
-        </label>
-        <label>
-          Platform:
-          <select
-            value={selectedPlatform}
-            onChange={(e) => setSelectedPlatform(e.target.value)}
-          >
-            <option value="">All</option>
-            {platforms.map((p) => (
-              <option key={p.id} value={p.name}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Played:
-          <select
-            value={selectedPlayed}
-            onChange={(e) => setSelectedPlayed(e.target.value)}
-          >
-            <option value="">All</option>
-            <option value="played">Played</option>
-            <option value="unplayed">Not Played</option>
-          </select>
-        </label>
+          </label>
+          <label>
+            Platform:
+            <select
+              value={selectedPlatform}
+              onChange={(e) => setSelectedPlatform(e.target.value)}
+            >
+              <option value="">All</option>
+              {platforms.map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Played:
+            <select
+              value={selectedPlayed}
+              onChange={(e) => setSelectedPlayed(e.target.value)}
+            >
+              <option value="">All</option>
+              <option value="played">Played</option>
+              <option value="unplayed">Not Played</option>
+            </select>
+          </label>
+        </div>
+        <Link to="/tierlist">
+          <button className="tierlist-button">Tier List</button>
+        </Link>
       </div>
 
       <div className="games-grid">

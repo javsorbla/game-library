@@ -5,7 +5,7 @@ import "../static/css/TierList.css";
 import "../static/css/GameList.css";
 
 const TierList = () => {
-  const [pair, setPair] = useState({ champion: null, challenger: null });
+  const [pair, setPair] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [viewingResults, setViewingResults] = useState(false);
   const [error, setError] = useState(null);
@@ -14,7 +14,7 @@ const TierList = () => {
     axios
       .get("http://localhost:8000/api/games/tier/pair/")
       .then((res) => {
-        setPair(res.data || { champion: null, challenger: null });
+        setPair(res.data || []);
       })
       .catch((err) => {
         console.error(err);
@@ -67,23 +67,22 @@ const TierList = () => {
 
       {!viewingResults ? (
         <div>
-          {pair.champion && pair.challenger ? (
+          {pair.length === 2 ? (
             <div className="pair-container">
-              {[pair.champion, pair.challenger].map((g) => (
-                <div key={g.id} className="tier-card">
-                  <TierListGameCard game={g} />
-                  <button
-                    className="choose-button"
-                    onClick={() => {
-                      const loser =
-                        g.id === pair.champion.id ? pair.challenger : pair.champion;
-                      submitResult(g.id, loser.id);
-                    }}
-                  >
-                    Select
-                  </button>
-                </div>
-              ))}
+              {pair.map((g, idx) => {
+                const other = pair[(idx + 1) % 2];
+                return (
+                  <div key={g.id} className="tier-card">
+                    <TierListGameCard game={g} />
+                    <button
+                      className="choose-button"
+                      onClick={() => submitResult(g.id, other.id)}
+                    >
+                      Select
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p>Loading games...</p>
@@ -93,7 +92,7 @@ const TierList = () => {
         <div className="rankings-list">
           {ratings.map((g, idx) => (
             <div key={g.id} className="tier-list-game-card">
-              <img src={g.image || "https://via.placeholder.com/300"} alt={g.name} />
+              <img src={g.image || "https://placehold.co/600x400"} alt={g.name} />
               <div className="info">
                 {idx + 1}. {g.name} ({g.tier_rating.toFixed(1)})
               </div>

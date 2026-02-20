@@ -7,9 +7,6 @@ export default function Navbar({ onLogout }) {
       <div className="nav-brand">
         <Link to="/dashboard">Game Library</Link>
       </div>
-      <div className="nav-links">
-        <Link to="/tier">Tier List</Link>
-      </div>
       <div className="nav-actions">
         <button className="logout-button" onClick={onLogout}>
           Logout

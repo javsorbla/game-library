@@ -232,14 +232,11 @@ class ApiEndpointTests(TestCase):
         pair_url = reverse('tier_pair')
         res = self.client.get(pair_url)
         self.assertEqual(res.status_code, 200)
-        # verify structure has champion and challenger
-        self.assertIn('champion', res.data)
-        self.assertIn('challenger', res.data)
-        champ_id = res.data['champion']['id']
-        other_id = res.data['challenger']['id']
-        self.assertIn(champ_id, {g1.id, g2.id})
-        self.assertIn(other_id, {g1.id, g2.id})
-        self.assertNotEqual(champ_id, other_id)
+        # verify response is list of two games
+        self.assertIsInstance(res.data, list)
+        self.assertEqual(len(res.data), 2)
+        ids = {res.data[0]['id'], res.data[1]['id']}
+        self.assertEqual(ids, {g1.id, g2.id})
 
         # submitting a result should update ratings
         submit_url = reverse('tier_submit')
@@ -260,31 +257,4 @@ class ApiEndpointTests(TestCase):
         self.assertEqual(res3.data[0]['id'], g1.id)
         self.assertEqual(res3.data[1]['id'], g2.id)
 
-    def test_facemash_champion_persistence(self):
-        # create two games and mark played
-        g1 = Game.objects.create(name="G1")
-        g2 = Game.objects.create(name="G2")
-        self.client.post(reverse('game_mark_played', args=[g1.id]))
-        self.client.post(reverse('game_mark_played', args=[g2.id]))
-
-        pair_url = reverse('tier_pair')
-        res1 = self.client.get(pair_url)
-        self.assertEqual(res1.status_code, 200)
-        champ_id = res1.data['champion']['id']
-        other_id = res1.data['challenger']['id']
-
-        # calling again without submitting should keep the same champion
-        res2 = self.client.get(pair_url)
-        self.assertEqual(res2.data['champion']['id'], champ_id)
-
-        # if champion wins, it should remain
-        submit_url = reverse('tier_submit')
-        self.client.post(submit_url, {'winner': champ_id, 'loser': other_id}, format='json')
-        res3 = self.client.get(pair_url)
-        self.assertEqual(res3.data['champion']['id'], champ_id)
-
-        # if challenger beats champion, champion should switch
-        self.client.post(submit_url, {'winner': other_id, 'loser': champ_id}, format='json')
-        res4 = self.client.get(pair_url)
-        self.assertEqual(res4.data['champion']['id'], other_id)
 

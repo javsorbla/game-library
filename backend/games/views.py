@@ -70,42 +70,21 @@ class GenreList(generics.ListAPIView):
     pagination_class = None
 
 
-class TierPairView(APIView): # Return a champion/challenger pair using a Facemash-style flow
+class TierPairView(APIView): # Return two random played games for the authenticated user.
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        qs = list(Game.objects.filter(players=request.user))
-        if len(qs) < 2:
+        qs = Game.objects.filter(players=request.user)
+        if qs.count() < 2:
             return Response(
                 {"detail": "not enough played games for tiering"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        session = request.session
-        champ = None
-        champ_id = session.get("facemash_champion")
-        if champ_id:
-            try:
-                champ = Game.objects.get(pk=champ_id, players=request.user)
-            except Game.DoesNotExist:
-                champ = None
-
         import random
 
-        if not champ:
-            champ = random.choice(qs)
-            session["facemash_champion"] = champ.id
-            session.modified = True
-
-        # choose a challenger that's different from champion
-        choices = [g for g in qs if g.id != champ.id]
-        challenger = random.choice(choices)
-
-        data = {
-            "champion": GameSerializer(champ, context={"request": request}).data,
-            "challenger": GameSerializer(challenger, context={"request": request}).data,
-        }
-        return Response(data)
+        pair = random.sample(list(qs), 2)
+        serializer = GameSerializer(pair, many=True, context={"request": request})
+        return Response(serializer.data)
 
 
 class TierSubmitView(APIView): # Accept a comparison result and update the stored Elo ratings.
@@ -130,12 +109,6 @@ class TierSubmitView(APIView): # Accept a comparison result and update the store
         wr.save()
         lr.save()
 
-        # update session champion if it lost
-        session = request.session
-        champ_id = session.get("facemash_champion")
-        if champ_id and str(champ_id) == str(loser_id):
-            session["facemash_champion"] = winner_id
-            session.modified = True
 
         return Response({"winner_rating": wr.rating, "loser_rating": lr.rating})
 

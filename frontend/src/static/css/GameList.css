@@ -32,11 +32,22 @@
   background: linear-gradient(145deg, #4e4f6e, #5c5d80);
   transform: scale(1.02);
 }
+
+.options-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* filtros centrados */
+  position: relative; /* para que el botón absoluto se posicione relativo a este contenedor */
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0 20px; /* separa de los bordes de la pantalla */
+  gap: 1rem;
+}
+
 .filters {
   display: flex;
   gap: 1rem;
-  justify-content: center;
-  margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .filters label {
@@ -156,4 +167,35 @@ body {
   gap: 20px;
   padding: 10px;
   margin-top:0%;
+}
+
+.tierlist-button {
+  position: absolute;
+  right: 0.55%;
+  transform: translateY(-50%);
+  background: linear-gradient(145deg, #ff6a00, #ee0979);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  font-weight: bold;
+}
+
+.tierlist-button:hover {
+  transform: translateY(-50%) scale(1.02); /* mantiene el centrado vertical al hacer hover */
+}
+
+@media (max-width: 600px) {
+  .options-bar {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tierlist-button {
+    position: static; /* deja de ser absoluto */
+    transform: none;
+    margin-top: 0.5rem; /* separa del bloque de filtros */
+  }
 }

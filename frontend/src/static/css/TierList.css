@@ -74,6 +74,17 @@
 .view-rankings-button {
   margin: 1.5rem auto;
   display: block;
+  background: #3a3633;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.view-rankings-button:hover {
+  transform: scale(1.05);
 }
 
 .tier-list-game-card h3 {

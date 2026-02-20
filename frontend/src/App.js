@@ -86,7 +86,7 @@ function AppContent({ isAuthenticated, setIsAuthenticated, handleLogout }) {
           }
         />
         <Route
-          path="/tier"
+          path="/tierlist"
           element={
             <PrivateRoute>
               <TierList />
