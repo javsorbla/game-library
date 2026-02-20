@@ -72,11 +72,8 @@ class GenreList(generics.ListAPIView):
     pagination_class = None
 
 
-# --- tier list functionality --------------------------------------------------
-
 class TierPairView(APIView):
     """Return two random played games for the authenticated user."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -95,7 +92,6 @@ class TierPairView(APIView):
 
 class TierSubmitView(APIView):
     """Accept a comparison result and update the stored Elo ratings."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -118,7 +114,6 @@ class TierSubmitView(APIView):
         lr.save()
 
         return Response({"winner_rating": wr.rating, "loser_rating": lr.rating})
-
 
 class TierRankingsView(APIView):
     """Return the user's games ordered by their current tier rating."""

@@ -1,8 +1,5 @@
 # Getting Started with Create React App
 
-> **Note:** this frontend now includes a _Played Games Tier List_ feature. After logging in and marking games as played, click the **Tier List** link in the navbar to compare and rank your games.
-
-
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
