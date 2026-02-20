@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import GameCard from "./GameCard";
+import TierListGameCard from "./TierListGameCard";
+import "../static/css/TierList.css";
 import "../static/css/GameList.css";
 
 const TierList = () => {
-  const [pair, setPair] = useState([]);
+  const [pair, setPair] = useState({ champion: null, challenger: null });
   const [ratings, setRatings] = useState([]);
   const [viewingResults, setViewingResults] = useState(false);
   const [error, setError] = useState(null);
@@ -13,7 +14,7 @@ const TierList = () => {
     axios
       .get("http://localhost:8000/api/games/tier/pair/")
       .then((res) => {
-        setPair(res.data || []);
+        setPair(res.data || { champion: null, challenger: null });
       })
       .catch((err) => {
         console.error(err);
@@ -48,7 +49,6 @@ const TierList = () => {
       });
   };
 
-  // helper to read CSRF cookie (same as GameCard)
   const getCsrf = () => {
     const split = document.cookie.split("; ").find((c) => c.startsWith("csrftoken="));
     return split ? split.split("=")[1] : "";
@@ -67,15 +67,21 @@ const TierList = () => {
 
       {!viewingResults ? (
         <div>
-          {pair.length === 2 ? (
+          {pair.champion && pair.challenger ? (
             <div className="pair-container">
-              {pair.map((g) => (
-                <div key={g.id} className="tier-card" onClick={() => {
-                    const loser = pair.find(x => x.id !== g.id);
-                    submitResult(g.id, loser.id);
-                  }}>
-                  <GameCard game={g} />
-                  <button className="choose-button">Select</button>
+              {[pair.champion, pair.challenger].map((g) => (
+                <div key={g.id} className="tier-card">
+                  <TierListGameCard game={g} />
+                  <button
+                    className="choose-button"
+                    onClick={() => {
+                      const loser =
+                        g.id === pair.champion.id ? pair.challenger : pair.champion;
+                      submitResult(g.id, loser.id);
+                    }}
+                  >
+                    Select
+                  </button>
                 </div>
               ))}
             </div>
@@ -86,8 +92,11 @@ const TierList = () => {
       ) : (
         <div className="rankings-list">
           {ratings.map((g, idx) => (
-            <div key={g.id} className="ranking-item">
-              {idx + 1}. {g.name} ({g.tier_rating.toFixed(1)})
+            <div key={g.id} className="tier-list-game-card">
+              <img src={g.image || "https://via.placeholder.com/300"} alt={g.name} />
+              <div className="info">
+                {idx + 1}. {g.name} ({g.tier_rating.toFixed(1)})
+              </div>
             </div>
           ))}
         </div>
