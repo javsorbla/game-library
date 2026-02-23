@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Game, Genre, Platform, GameRating
+from .models import Game, Genre, Platform, MergeSortSession
 
 
 @admin.register(Game)
@@ -18,9 +18,8 @@ class PlatformAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
-@admin.register(GameRating)
-class GameRatingAdmin(admin.ModelAdmin):
-    list_display = ('user', 'game', 'rating')
-    list_filter = ('user',)
-    search_fields = ('game__name', 'user__username')
+@admin.register(MergeSortSession)
+class MergeSortSessionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'created_at', 'updated_at')
+    readonly_fields = ('state', 'created_at', 'updated_at')
 

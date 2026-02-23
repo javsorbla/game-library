@@ -6,7 +6,6 @@ class GameSerializer(serializers.ModelSerializer):
     genre = serializers.SerializerMethodField()
     platform = serializers.SerializerMethodField()
     is_played = serializers.SerializerMethodField()
-    tier_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Game
@@ -24,18 +23,6 @@ class GameSerializer(serializers.ModelSerializer):
 
     def get_platform(self, obj):
         return obj.platform
-
-    def get_tier_rating(self, obj):
-        # return rating for the requesting user if available
-        request = self.context.get('request')
-        if request and hasattr(request, 'user') and request.user.is_authenticated:
-            from .models import GameRating
-            try:
-                rating = GameRating.objects.get(user=request.user, game=obj)
-                return rating.rating
-            except GameRating.DoesNotExist:
-                return None
-        return None
 
     def create(self, validated_data):
         # handle comma-separated genre/platform if provided

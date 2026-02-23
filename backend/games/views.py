@@ -6,8 +6,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 
-from .models import Game, Genre, Platform, GameRating
+from .models import Game, Genre, Platform, MergeSortSession
 from .serializers import GameSerializer, GenreSerializer, PlatformSerializer
+
+from . import mergesort as ms
 
 class GamePagination(PageNumberPagination):
     page_size = 21
@@ -52,7 +54,6 @@ class MarkPlayedView(APIView):
     def post(self, request, pk):
         game = get_object_or_404(Game, pk=pk)
         game.players.add(request.user)
-        GameRating.objects.get_or_create(user=request.user, game=game)
         serializer = GameSerializer(game, context={'request': request})
         return Response(serializer.data)
 
@@ -69,66 +70,108 @@ class GenreList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     pagination_class = None
 
-
-class TierPairView(APIView): # Return two random played games for the authenticated user.
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        qs = Game.objects.filter(players=request.user)
-        if qs.count() < 2:
-            return Response(
-                {"detail": "not enough played games for tiering"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        import random
-
-        pair = random.sample(list(qs), 2)
-        serializer = GameSerializer(pair, many=True, context={"request": request})
-        return Response(serializer.data)
-
-
-class TierSubmitView(APIView): # Accept a comparison result and update the stored Elo ratings.
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        winner_id = request.data.get("winner")
-        loser_id = request.data.get("loser")
-        if not winner_id or not loser_id:
-            return Response({"detail": "winner and loser required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        winner = get_object_or_404(Game, pk=winner_id, players=request.user)
-        loser = get_object_or_404(Game, pk=loser_id, players=request.user)
-        from .models import GameRating, update_elo
-
-        wr, _ = GameRating.objects.get_or_create(user=request.user, game=winner)
-        lr, _ = GameRating.objects.get_or_create(user=request.user, game=loser)
-
-        new_wr, new_lr = update_elo(wr.rating, lr.rating)
-        wr.rating = new_wr
-        lr.rating = new_lr
-        wr.save()
-        lr.save()
-
-
-        return Response({"winner_rating": wr.rating, "loser_rating": lr.rating})
-
-class TierRankingsView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        from .models import GameRating
-
-        ratings = GameRating.objects.filter(user=request.user).select_related("game").order_by("-rating")
-        data = []
-        for r in ratings:
-            serialized = GameSerializer(r.game, context={"request": request}).data
-            serialized["tier_rating"] = r.rating
-            data.append(serialized)
-        return Response(data)
-
-
 class PlatformList(generics.ListAPIView):
     queryset = Platform.objects.all()
     serializer_class = PlatformSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None
+
+
+# Merge Sort tier list
+
+def _session_response(state: dict, game_map: dict) -> dict:
+    pair = ms.current_pair(state)
+    return {
+        "finished": state["finished"],
+        "done": state["done"],
+        "total": state["total"],
+        "pair": [game_map[gid] for gid in pair] if pair else None,
+        "result": ms._assign_tiers(state["final"]) if state["finished"] else None,
+    }
+
+
+def _game_map(user, ids: list, request) -> dict:
+    games = Game.objects.filter(pk__in=ids)
+    return {g.pk: GameSerializer(g, context={"request": request}).data for g in games}
+
+
+class MergeSortStartView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        played_ids = list(
+            Game.objects.filter(players=request.user).values_list("pk", flat=True)
+        )
+        if len(played_ids) < 2:
+            return Response(
+                {"detail": "You need at least 2 played games to start a tier list."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        state = ms.build_initial_state(played_ids)
+        MergeSortSession.objects.update_or_create(
+            user=request.user,
+            defaults={"state": state},
+        )
+        game_map = _game_map(request.user, played_ids, request)
+        return Response(_session_response(state, game_map))
+
+
+class MergeSortAnswerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            session = MergeSortSession.objects.get(user=request.user)
+        except MergeSortSession.DoesNotExist:
+            return Response(
+                {"detail": "No active session. Start a new tier list first."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        winner_id = request.data.get("winner")
+        loser_id = request.data.get("loser")
+        if not winner_id or not loser_id:
+            return Response(
+                {"detail": "winner and loser are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            state = ms.answer(session.state, int(winner_id), int(loser_id))
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        session.state = state
+        session.save()
+
+        all_ids = (
+            state.get("final")
+            or state["left"]
+            + state["right"]
+            + state["result"]
+            + [i for sub in state["pending"] for i in sub]
+        )
+        game_map = _game_map(request.user, all_ids, request)
+        return Response(_session_response(state, game_map))
+
+
+class MergeSortStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            session = MergeSortSession.objects.get(user=request.user)
+        except MergeSortSession.DoesNotExist:
+            return Response({"detail": "No active session."}, status=status.HTTP_404_NOT_FOUND)
+
+        state = session.state
+        all_ids = (
+            state.get("final")
+            or state["left"]
+            + state["right"]
+            + state["result"]
+            + [i for sub in state["pending"] for i in sub]
+        )
+        game_map = _game_map(request.user, all_ids, request)
+        return Response(_session_response(state, game_map))
