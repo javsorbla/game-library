@@ -6,8 +6,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 
-from .models import Game, Genre, Platform, GameRating
+from .models import Game, Genre, Platform, TournamentSession
 from .serializers import GameSerializer, GenreSerializer, PlatformSerializer
+from . import tournament as t
 
 class GamePagination(PageNumberPagination):
     page_size = 21
@@ -44,7 +45,6 @@ class GameList(generics.ListCreateAPIView):
         # distinct in case multiple m2m relationships produced duplicate rows
         return qs.distinct()
 
-
 class MarkPlayedView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -52,7 +52,6 @@ class MarkPlayedView(APIView):
     def post(self, request, pk):
         game = get_object_or_404(Game, pk=pk)
         game.players.add(request.user)
-        GameRating.objects.get_or_create(user=request.user, game=game)
         serializer = GameSerializer(game, context={'request': request})
         return Response(serializer.data)
 
@@ -69,66 +68,83 @@ class GenreList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     pagination_class = None
 
-
-class TierPairView(APIView): # Return two random played games for the authenticated user.
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        qs = Game.objects.filter(players=request.user)
-        if qs.count() < 2:
-            return Response(
-                {"detail": "not enough played games for tiering"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        import random
-
-        pair = random.sample(list(qs), 2)
-        serializer = GameSerializer(pair, many=True, context={"request": request})
-        return Response(serializer.data)
-
-
-class TierSubmitView(APIView): # Accept a comparison result and update the stored Elo ratings.
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        winner_id = request.data.get("winner")
-        loser_id = request.data.get("loser")
-        if not winner_id or not loser_id:
-            return Response({"detail": "winner and loser required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        winner = get_object_or_404(Game, pk=winner_id, players=request.user)
-        loser = get_object_or_404(Game, pk=loser_id, players=request.user)
-        from .models import GameRating, update_elo
-
-        wr, _ = GameRating.objects.get_or_create(user=request.user, game=winner)
-        lr, _ = GameRating.objects.get_or_create(user=request.user, game=loser)
-
-        new_wr, new_lr = update_elo(wr.rating, lr.rating)
-        wr.rating = new_wr
-        lr.rating = new_lr
-        wr.save()
-        lr.save()
-
-
-        return Response({"winner_rating": wr.rating, "loser_rating": lr.rating})
-
-class TierRankingsView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        from .models import GameRating
-
-        ratings = GameRating.objects.filter(user=request.user).select_related("game").order_by("-rating")
-        data = []
-        for r in ratings:
-            serialized = GameSerializer(r.game, context={"request": request}).data
-            serialized["tier_rating"] = r.rating
-            data.append(serialized)
-        return Response(data)
-
-
 class PlatformList(generics.ListAPIView):
     queryset = Platform.objects.all()
     serializer_class = PlatformSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None
+
+
+def _build_response(state: dict, request) -> dict:
+    """Single place that turns a state dict into the API response."""
+    game_map = {
+        g.pk: GameSerializer(g, context={"request": request}).data
+        for g in Game.objects.filter(pk__in=t.all_game_ids(state))
+    }
+    pair = t.current_pair(state)
+    ranking = None
+    if state.get("ranking"):
+        ranking = [{**game_map[r["id"]], "tier": r["tier"], "rank": r["rank"], "wins": r["wins"]}
+                   for r in state["ranking"]]
+    return {
+        "phase":      state["phase"],
+        "done":       state["done"],
+        "total":      state["total"],
+        "pair":       [game_map[gid] for gid in pair] if pair else None,
+        "group_info": t.current_group_info(state),
+        "ranking":    ranking,
+    }
+
+
+class TournamentStartView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        played = Game.objects.filter(players=request.user).prefetch_related("genres")
+        if played.count() < 2:
+            return Response(
+                {"detail": "You need at least 2 played games to start a tier list."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        games_with_genre = [
+            (game.pk, game.genres.first().name if game.genres.first() else "")
+            for game in played
+        ]
+        state = t.build_initial_state(games_with_genre)
+        TournamentSession.objects.update_or_create(user=request.user, defaults={"state": state})
+        return Response(_build_response(state, request))
+
+
+class TournamentAnswerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            session = TournamentSession.objects.get(user=request.user)
+        except TournamentSession.DoesNotExist:
+            return Response({"detail": "No active session."}, status=status.HTTP_404_NOT_FOUND)
+
+        winner_id = request.data.get("winner")
+        loser_id  = request.data.get("loser")
+        if not winner_id or not loser_id:
+            return Response({"detail": "winner and loser are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            state = t.answer(session.state, int(winner_id), int(loser_id))
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        session.state = state
+        session.save()
+        return Response(_build_response(state, request))
+
+
+class TournamentStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            session = TournamentSession.objects.get(user=request.user)
+        except TournamentSession.DoesNotExist:
+            return Response({"detail": "No active session."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(_build_response(session.state, request))

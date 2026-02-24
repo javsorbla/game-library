@@ -38,24 +38,16 @@ class Game(models.Model):
         return ", ".join(self.platforms.values_list('name', flat=True))
 
 
-class GameRating(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    game = models.ForeignKey(Game, on_delete=models.CASCADE)
-    rating = models.FloatField(default=1000)
-
-    class Meta:
-        unique_together = ("user", "game")
-        ordering = ["-rating"]
+class TournamentSession(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="tournament_session",
+    )
+    state = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user.username}: {self.game.name} ({self.rating:.1f})"
-
-
-def update_elo(winner_rating: float, loser_rating: float, k: float = 32):
-    expected_win = 1 / (1 + 10 ** ((loser_rating - winner_rating) / 400))
-    expected_loss = 1 / (1 + 10 ** ((winner_rating - loser_rating) / 400))
-
-    new_win = winner_rating + k * (1 - expected_win)
-    new_loss = loser_rating + k * (0 - expected_loss)
-    return new_win, new_loss
+        return f"TournamentSession({self.user.username})"
 

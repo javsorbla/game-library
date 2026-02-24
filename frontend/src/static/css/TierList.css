@@ -1,103 +1,268 @@
-.tier-list-game-card {
-  position: relative;
-  width: 100%;
-  max-width: 900px;
-  aspect-ratio: 1.2 / 1; 
-  background: #000;
-  border-radius: 12px;
-  overflow: hidden;
-  box-sizing: border-box;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* ── Container ─────────────────────────────────────────────────────────────── */
+.ms-container {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #e0e0e0;
+  padding: 24px 16px 48px;
+  font-family: "Segoe UI", sans-serif;
 }
 
-.tier-list-game-card img {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.tier-list-game-card .info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 0.6rem;
-  background: rgba(0, 0, 0, 0.65);
-  color: #fff;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.tier-list-game-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.7);
-}
-
-.pair-container {
+.ms-header {
   display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ms-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.ms-back-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: #aaa;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.15s;
+}
+.ms-back-btn:hover { border-color: #888; color: #fff; }
+
+/* ── Progress ──────────────────────────────────────────────────────────────── */
+.ms-progress-wrapper {
+  position: relative;
+  background: #1e1e2e;
+  border-radius: 8px;
+  height: 28px;
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+
+.ms-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #6c63ff, #a78bfa);
+  transition: width 0.4s ease;
+  border-radius: 8px;
+}
+
+.ms-progress-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+
+/* ── Comparison ────────────────────────────────────────────────────────────── */
+.ms-instruction {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #aaa;
+  margin-bottom: 24px;
+}
+
+.ms-pair {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
   flex-wrap: wrap;
 }
 
-.tier-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-
-.rankings-list {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-
-.choose-button {
-  margin-top: 0.8rem;
-  background: #ff6a00;
-  border: none;
-  border-radius: 6px;
-  color: #fff;
-  padding: 0.5rem 1rem;
+.ms-compare-card {
+  background: #1a1a2e;
+  border: 2px solid #2a2a4a;
+  border-radius: 14px;
+  width: 280px;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
-}
-
-.choose-button:hover {
-  background: #ee0979;
-  transform: scale(1.05);
-}
-
-.view-rankings-button {
-  margin: 1.5rem auto;
-  display: block;
-  background: #3a3633;
-  border: none;
-  border-radius: 6px;
-  color: #fff;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
-}
-
-.view-rankings-button:hover {
-  transform: scale(1.05);
-}
-
-.tier-list-game-card h3 {
-  margin: 0.4rem 0;
-  font-size: 1.1rem;
-  line-height: 1.2;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
 }
 
-.error {
-  color: #ff6a00;
+.ms-compare-card:hover {
+  transform: translateY(-6px);
+  border-color: #6c63ff;
+  box-shadow: 0 8px 32px rgba(108, 99, 255, 0.35);
+}
+
+.ms-compare-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.ms-compare-card-name {
+  padding: 12px 14px 4px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: left;
+}
+
+.ms-compare-card-meta {
+  padding: 0 14px 14px;
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.ms-start-btn {
+  display: block;
+  margin: 32px auto 0;
+  padding: 12px 36px;
+  background: linear-gradient(135deg, #6c63ff, #a78bfa);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ms-start-btn:hover { opacity: 0.85; }
+
+.ms-restart-btn {
+  display: block;
+  margin: 28px auto 0;
+  background: transparent;
+  border: 1px solid #444;
+  color: #888;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+.ms-restart-btn:hover { border-color: #888; color: #ccc; }
+
+.ms-restart-final { margin-top: 40px; }
+
+/* ── Idle / error / loading ────────────────────────────────────────────────── */
+.ms-idle, .ms-error {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-top: 60px;
+  color: #aaa;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.ms-loading {
+  text-align: center;
+  margin-top: 80px;
+  color: #666;
+  font-size: 1rem;
+}
+
+/* ── Result ────────────────────────────────────────────────────────────────── */
+.ms-result { max-width: 860px; margin: 0 auto; }
+
+.ms-result-title {
+  text-align: center;
+  font-size: 1.6rem;
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.ms-tier-row {
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 90px;
+}
+
+.ms-tier-label {
+  width: 64px;
+  min-width: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #1a1a1a;
+  flex-shrink: 0;
+}
+
+.ms-tier-games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: #1a1a2e;
+  padding: 10px 12px;
+  flex: 1;
+  align-items: center;
+}
+
+.ms-tier-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+  gap: 5px;
+}
+
+.ms-tier-game img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.ms-tier-game span {
+  font-size: 0.68rem;
+  color: #ccc;
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+  max-width: 80px;
+}
+
+/* ── Phase badge ───────────────────────────────────────────────────────────── */
+.ms-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.ms-phase-badge.groups { background: #1e3a5f; color: #7ec8ff; }
+.ms-phase-badge.final  { background: #3a1e1e; color: #ffb347; }
+
+.ms-genre-tag {
+  background: rgba(255,255,255,0.12);
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+/* ── Tier game rank number ─────────────────────────────────────────────────── */
+.ms-tier-game-rank {
+  font-size: 0.7rem;
+  color: #aaa;
+  font-weight: 700;
+}
+.ms-tier-game-name {
+  font-size: 0.68rem;
+  color: #ccc;
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+  max-width: 80px;
 }
